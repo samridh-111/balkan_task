@@ -1,0 +1,6 @@
+DROP TABLE IF EXISTS download_logs;
+DROP TABLE IF EXISTS file_shares;
+DROP TABLE IF EXISTS files;
+DROP TABLE IF EXISTS file_contents;
+DROP TABLE IF EXISTS users;
+
