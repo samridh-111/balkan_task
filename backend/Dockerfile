@@ -7,14 +7,18 @@ RUN apk add --no-cache git ca-certificates tzdata
 # Set working directory
 WORKDIR /app
 
-# Copy all source files first
-COPY . .
+# Copy go mod files first (essential for module operations)
+COPY go.mod* go.sum* ./
 
-# Ensure go.sum exists (generate if missing)
-RUN if [ ! -f go.sum ] || [ ! -s go.sum ]; then go mod tidy; fi
+# Ensure go.mod exists and generate go.sum if needed
+RUN if [ ! -f go.mod ]; then echo "go.mod not found!"; exit 1; fi && \
+    if [ ! -f go.sum ] || [ ! -s go.sum ]; then go mod tidy; fi
 
 # Download dependencies
 RUN go mod download
+
+# Copy the rest of the source code
+COPY . .
 
 # Build the application
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/api
@@ -22,8 +26,8 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/api
 # Create uploads directory
 RUN mkdir -p /app/uploads
 
-# Clean up source files (keep only binary)
-RUN rm -rf *.go go.mod go.sum internal/
+# Clean up source files (keep only binary and necessary files)
+RUN rm -rf *.go internal/ pkg/ db/ http/ core/ cmd/ config/
 
 # Expose port
 EXPOSE 8080
