@@ -495,9 +495,11 @@ open docs/api/index.html
 
 ## Postman Collection
 
-Import the provided Postman collection for easy API testing:
+Import the Postman collection directly for easy API testing:
 
-[Download Postman Collection](./postman_collection.json)
+**🔗 Direct Import URL:** https://samridh-suresh-2005-9533610.postman.co/workspace/Samridh-Suresh's-Workspace~48625f1c-0f6a-4059-889a-5bdd0084cb61/collection/50759397-69341512-82c7-415b-a63b-19482a5f49df?action=share&source=copy-link&creator=50759397
+
+**📁 Local JSON File:** [Download Collection](./postman_collection.json)
 
 ### Collection Structure
 
