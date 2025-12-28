@@ -18,6 +18,7 @@ import (
 	"github.com/samridh-111/balkan_task/internal/http/handlers"
 	"github.com/samridh-111/balkan_task/internal/http/middleware"
 	"github.com/samridh-111/balkan_task/internal/pkg/logger"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -50,8 +51,9 @@ func main() {
 
 	authHandler := handlers.NewAuthHandler(authService)
 	fileHandler := handlers.NewFileHandler(fileRepo, userRepo, cfg.Storage.Path)
+	adminHandler := handlers.NewAdminHandler()
 
-	router := setupRouter(authHandler, fileHandler, jwtService)
+	router := setupRouter(authHandler, fileHandler, adminHandler, jwtService)
 
 	srv := &http.Server{
 		Addr:    fmt.Sprintf("%s:%s", cfg.Server.Host, cfg.Server.Port),
@@ -82,8 +84,17 @@ func main() {
 	log.Info("Server exited")
 }
 
-func setupRouter(authHandler *handlers.AuthHandler, fileHandler *handlers.FileHandler, jwtService *auth.Service) *gin.Engine {
+func setupRouter(authHandler *handlers.AuthHandler, fileHandler *handlers.FileHandler, adminHandler *handlers.AdminHandler, jwtService *auth.Service) *gin.Engine {
 	router := gin.Default()
+
+	// CORS middleware
+	router.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:5173", "http://localhost:5174"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization"},
+		AllowCredentials: true,
+		MaxAge:           12 * 60 * 60, // 12 hours
+	}))
 
 	router.Use(middleware.ErrorHandler())
 	router.Use(middleware.RateLimitMiddleware())
@@ -103,12 +114,21 @@ func setupRouter(authHandler *handlers.AuthHandler, fileHandler *handlers.FileHa
 		files := v1.Group("/files")
 		files.Use(middleware.AuthMiddleware(jwtService))
 		{
+			files.POST("/check-duplicate", fileHandler.CheckDuplicate)
 			files.POST("/upload", fileHandler.Upload)
 			files.GET("", fileHandler.List)
 			files.GET("/:id", fileHandler.Get)
 			files.GET("/:id/download", fileHandler.Download)
 			files.DELETE("/:id", fileHandler.Delete)
 			files.POST("/:id/share", fileHandler.Share)
+		}
+
+		admin := v1.Group("/admin")
+		admin.Use(middleware.AuthMiddleware(jwtService))
+		{
+			admin.GET("/stats", adminHandler.GetStats)
+			admin.GET("/files", adminHandler.GetAllFiles)
+			admin.GET("/users", adminHandler.GetAllUsers)
 		}
 	}
 

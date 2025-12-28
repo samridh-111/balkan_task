@@ -144,6 +144,47 @@ func (h *FileHandler) Upload(c *gin.Context) {
 	c.JSON(http.StatusCreated, fileRecord)
 }
 
+func (h *FileHandler) CheckDuplicate(c *gin.Context) {
+	var req struct {
+		SHA256Hash string `json:"sha256_hash" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "sha256_hash is required"})
+		return
+	}
+
+	// Check if file content with this hash already exists
+	fileContent, err := h.fileRepo.GetFileContentByHash(req.SHA256Hash)
+	if err != nil && err != errors.ErrNotFound {
+		c.Error(err)
+		return
+	}
+
+	isDuplicate := fileContent != nil
+
+	response := gin.H{
+		"is_duplicate": isDuplicate,
+	}
+
+	if isDuplicate {
+		// Get file information for the duplicate
+		fileCount, err := h.fileRepo.GetFileCountByContentID(fileContent.ID)
+		if err != nil {
+			c.Error(err)
+			return
+		}
+
+		response["duplicate_info"] = gin.H{
+			"file_size":     fileContent.Size,
+			"uploaded_at":   fileContent.CreatedAt,
+			"reference_count": fileCount,
+		}
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
 func (h *FileHandler) List(c *gin.Context) {
 	userID, _ := c.Get("user_id")
 	userUUID := userID.(uuid.UUID)

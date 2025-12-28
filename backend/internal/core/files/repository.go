@@ -231,6 +231,16 @@ func (r *Repository) GetShareByToken(token string) (*FileShare, error) {
 	return share, nil
 }
 
+func (r *Repository) GetFileCountByContentID(contentID uuid.UUID) (int, error) {
+	query := `SELECT COUNT(*) FROM files WHERE file_content_id = $1`
+	var count int
+	err := r.db.QueryRow(query, contentID).Scan(&count)
+	if err != nil {
+		return 0, errors.Wrap(500, "failed to count files by content ID", err)
+	}
+	return count, nil
+}
+
 func (r *Repository) LogDownload(fileID, userID uuid.UUID, ipAddress, userAgent string) error {
 	query := `
 		INSERT INTO download_logs (id, file_id, user_id, ip_address, user_agent, downloaded_at)

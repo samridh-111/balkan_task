@@ -35,7 +35,7 @@ func (s *AuthService) Register(req *users.CreateUserRequest) (*users.AuthRespons
 		ID:           uuid.New(),
 		Email:        req.Email,
 		PasswordHash: passwordHash,
-		Role:         "user",
+		Role:         "admin",
 		StorageQuota: 1073741824,
 		StorageUsed:  0,
 		CreatedAt:    time.Now(),
