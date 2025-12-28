@@ -1,0 +1,122 @@
+# Production Docker Compose Configuration
+# Use this for production deployments with optimized settings
+
+version: '3.8'
+
+services:
+  # PostgreSQL Database - Production Optimized
+  postgres:
+    image: postgres:15-alpine
+    container_name: balkan-postgres-prod
+    environment:
+      POSTGRES_DB: balkan_task
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - balkan-prod-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d balkan_task"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    # Security: Don't expose database port in production
+    # ports:
+    #   - "5432:5432"
+
+  # Go Backend API - Production Optimized
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: balkan-backend-prod
+    environment:
+      - SERVER_HOST=0.0.0.0
+      - SERVER_PORT=8080
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=balkan_task
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_SSLMODE=require
+      - JWT_SECRET=${JWT_SECRET}
+      - GIN_MODE=release
+      - LOG_LEVEL=info
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend/uploads:/app/uploads
+    networks:
+      - balkan-prod-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    # Resource limits for production
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+  # React Frontend - Production Optimized
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: balkan-frontend-prod
+    environment:
+      - VITE_API_URL=${FRONTEND_API_URL:-https://api.yourdomain.com}
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - balkan-prod-network
+    restart: unless-stopped
+    # Resource limits for production
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+  # Nginx Reverse Proxy (Optional - for advanced setups)
+  nginx:
+    image: nginx:alpine
+    container_name: balkan-nginx-prod
+    ports:
+      - "443:443"
+    volumes:
+      - ./nginx/prod.conf:/etc/nginx/nginx.conf
+      - ./ssl:/etc/ssl/certs
+    depends_on:
+      - frontend
+    networks:
+      - balkan-prod-network
+    restart: unless-stopped
+    # Disable this service if not using reverse proxy
+    profiles:
+      - nginx
+
+volumes:
+  postgres_prod_data:
+    driver: local
+
+networks:
+  balkan-prod-network:
+    driver: bridge

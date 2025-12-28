@@ -13,6 +13,8 @@ docs/
 ├── README.md              # This index file
 ├── setup/                 # Installation and setup guides
 │   └── README.md         # Complete setup instructions
+├── deployment/           # Deployment guides
+│   └── railway.md       # Railway cloud deployment
 ├── api/                   # API documentation
 │   ├── README.md         # API reference and examples
 │   ├── openapi.yaml      # OpenAPI 3.0 specification
@@ -47,6 +49,15 @@ Complete installation and configuration instructions for:
 - Docker deployment
 - Development environment setup
 - Troubleshooting common issues
+
+### [Railway Deployment](./deployment/railway.md)
+Cloud deployment guide for Railway platform:
+- Step-by-step Railway setup
+- Database configuration
+- Environment variables
+- Troubleshooting common issues
+- Performance optimization
+- Cost management
 
 ### [API Documentation](./api/README.md)
 Comprehensive API reference including:

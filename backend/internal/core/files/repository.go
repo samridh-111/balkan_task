@@ -1,3 +1,13 @@
+// Package files provides data access layer for file management operations.
+//
+// This package implements the Repository pattern for file-related database operations,
+// including file metadata, content deduplication, and sharing functionality.
+//
+// Architecture:
+//   - File: User-visible file metadata and references
+//   - FileContent: Deduplicated content storage by SHA-256 hash
+//   - FileShare: Public/private sharing permissions
+//   - DownloadLog: Audit trail for download activities
 package files
 
 import (
@@ -231,6 +241,25 @@ func (r *Repository) GetShareByToken(token string) (*FileShare, error) {
 	return share, nil
 }
 
+// GetFileCountByContentID returns the number of files referencing a specific content.
+//
+// This is used to track deduplication efficiency and determine if content
+// can be safely deleted when all file references are removed.
+//
+// Parameters:
+//   - contentID: UUID of the file content to count references for
+//
+// Returns:
+//   - int: Number of files referencing this content
+//   - error: Database error if the query fails
+//
+// Example:
+//   count, err := repo.GetFileCountByContentID(contentUUID)
+//   if err != nil {
+//       log.Printf("Failed to count references: %v", err)
+//       return
+//   }
+//   log.Printf("Content referenced by %d files", count)
 func (r *Repository) GetFileCountByContentID(contentID uuid.UUID) (int, error) {
 	query := `SELECT COUNT(*) FROM files WHERE file_content_id = $1`
 	var count int

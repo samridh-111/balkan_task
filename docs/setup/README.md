@@ -33,16 +33,24 @@ Before setting up the application, ensure you have the following installed:
 - **Disk Space**: 2GB for source code and dependencies
 - **Network**: Internet connection for package downloads
 
-## Quick Start with Docker
+## Quick Start with Docker 🐳
 
-The fastest way to get started is using Docker Compose:
+The fastest way to get started is using Docker Compose, which handles all dependencies automatically:
 
+### Prerequisites
+- Docker Engine 20.10+
+- Docker Compose 2.0+ (usually included with Docker Desktop)
+
+### One-Command Setup
 ```bash
 # Clone the repository
 git clone https://github.com/samridh-111/balkan_task.git
 cd balkan_task
 
-# Start all services
+# Copy environment configuration
+cp env.example .env
+
+# Start all services (first time will take a few minutes to build)
 docker-compose up --build
 
 # Access the application
@@ -51,7 +59,71 @@ docker-compose up --build
 # Database Admin: http://localhost:8081
 ```
 
-That's it! The application will be running with all services properly configured.
+### What Happens
+1. **PostgreSQL** database starts with automatic schema creation
+2. **Go backend** builds and starts with all dependencies
+3. **React frontend** builds and serves via Nginx
+4. **Adminer** provides web-based database management
+
+### First-Time User Registration
+1. Open http://localhost:3000
+2. Click "Sign Up"
+3. Register your account (first user becomes admin)
+4. Login and start exploring!
+
+### Docker Management Commands
+```bash
+# View running services
+docker-compose ps
+
+# View logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+
+# Restart after code changes
+docker-compose restart backend frontend
+
+# Clean rebuild (after Dockerfile changes)
+docker-compose up --build --force-recreate
+
+# Remove everything (including volumes/data)
+docker-compose down -v --rmi all
+```
+
+### Troubleshooting Docker Issues
+```bash
+# Check Docker status
+docker --version
+docker-compose --version
+
+# View detailed logs
+docker-compose logs backend
+docker-compose logs frontend
+docker-compose logs postgres
+
+# Access container shell
+docker-compose exec backend sh
+docker-compose exec postgres psql -U postgres -d balkan_task
+
+# Check resource usage
+docker stats
+```
+
+### Development with Docker
+```bash
+# For hot-reloading during development, mount source code
+docker-compose -f docker-compose.dev.yml up
+
+# Or modify docker-compose.yml to mount volumes:
+# backend:
+#   volumes:
+#     - ./backend:/app
+#   command: ["air", "-c", ".air.toml"]  # If using Air
+```
+
+That's it! Docker handles all the complexity of setting up PostgreSQL, Go dependencies, Node modules, and networking between services.
 
 ## Manual Setup
 

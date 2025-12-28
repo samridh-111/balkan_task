@@ -1,0 +1,18 @@
+# Railway-specific Dockerfile that combines all services
+FROM docker:latest
+
+# Install docker-compose
+RUN apk add --no-cache docker-compose
+
+# Copy docker-compose configuration
+COPY docker-compose.railway.yml /app/docker-compose.yml
+COPY backend/ /app/backend/
+COPY frontend/ /app/frontend/
+COPY docker/ /app/docker/
+COPY env.example /app/.env
+
+# Set working directory
+WORKDIR /app
+
+# Start all services
+CMD ["docker-compose", "up", "--build"]
