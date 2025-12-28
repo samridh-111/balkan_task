@@ -40,9 +40,9 @@ Thumbs.db
 README.md
 docs/
 
-# Docker files
-Dockerfile
-.dockerignore
+# Railway/Render files
+railway.json
+render.yaml
 
 # Uploads directory (will be mounted as volume)
 uploads/

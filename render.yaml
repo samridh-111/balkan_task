@@ -1,0 +1,54 @@
+services:
+  # PostgreSQL Database
+  - type: pserv
+    name: balkan-postgres
+    env: postgres
+    region: oregon
+    plan: starter
+
+  # Go Backend API
+  - type: web
+    name: balkan-backend
+    env: docker
+    region: oregon
+    plan: starter
+    rootDir: backend/
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: SERVER_HOST
+        value: 0.0.0.0
+      - key: SERVER_PORT
+        value: 10000
+      - key: DB_SSLMODE
+        value: require
+      - key: JWT_SECRET
+        generateValue: true
+      - key: STORAGE_PATH
+        value: ./uploads
+      - key: GIN_MODE
+        value: release
+      - key: LOG_LEVEL
+        value: info
+      - fromService:
+          type: pserv
+          name: balkan-postgres
+          property: connectionString
+        key: DATABASE_URL
+
+  # React Frontend
+  - type: web
+    name: balkan-frontend
+    env: static
+    region: oregon
+    plan: starter
+    rootDir: frontend/
+    buildCommand: npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - fromService:
+          type: web
+          name: balkan-backend
+          property: host
+        key: VITE_API_URL
+        value: https://$VITE_API_URL
