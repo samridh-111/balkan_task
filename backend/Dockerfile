@@ -2,28 +2,19 @@
 FROM golang:1.22-alpine
 
 # Install build dependencies
-RUN apk add --no-cache git ca-certificates tzdata
+RUN apk add --no-cache git ca-certificates tzdata wget
 
 # Set working directory
 WORKDIR /app
 
-# Copy all files
-COPY . .
-
-# Check if go.mod exists, if not create basic one
-RUN if [ ! -f go.mod ]; then \
-      echo "go.mod not found, creating basic module"; \
-      go mod init backend; \
-    fi
-
-# Generate go.sum if missing or empty
-RUN if [ ! -f go.sum ] || [ ! -s go.sum ]; then \
-      echo "Generating go.sum"; \
-      go mod tidy; \
-    fi
+# Copy go.mod and go.sum first (for better caching)
+COPY go.mod go.sum ./
 
 # Download dependencies
 RUN go mod download
+
+# Copy the rest of the source code
+COPY . .
 
 # Build the application
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/api
