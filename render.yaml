@@ -12,8 +12,7 @@ services:
     env: docker
     region: oregon
     plan: starter
-    rootDir: backend/
-    dockerfilePath: ./Dockerfile
+    dockerfilePath: backend/Dockerfile
     healthCheckPath: /health
     envVars:
       - key: SERVER_HOST
@@ -52,3 +51,4 @@ services:
           property: host
         key: VITE_API_URL
         value: https://$VITE_API_URL
+
