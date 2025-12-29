@@ -7,8 +7,23 @@ RUN apk add --no-cache git ca-certificates tzdata wget
 # Set working directory
 WORKDIR /app
 
-# Copy all files
+# Copy all files from build context
 COPY . .
+
+# Debug: List contents to see what was copied
+RUN ls -la
+
+# Check if we're in the backend directory or repo root
+RUN if [ -f cmd/api/main.go ]; then \
+      echo "Found cmd/api/main.go - build context is backend directory"; \
+    elif [ -f backend/cmd/api/main.go ]; then \
+      echo "Found backend/cmd/api/main.go - build context is repo root"; \
+      mv backend/* . && mv backend/.* . 2>/dev/null || true && rmdir backend; \
+    else \
+      echo "ERROR: Cannot find main.go file"; \
+      ls -la; \
+      exit 1; \
+    fi
 
 # Create go.mod if missing (fallback for build context issues)
 RUN if [ ! -f go.mod ]; then \
@@ -36,6 +51,9 @@ RUN if [ ! -f go.sum ] || [ ! -s go.sum ]; then \
 
 # Download dependencies
 RUN go mod download
+
+# Debug: Show final directory structure
+RUN ls -la && ls -la cmd/
 
 # Build the application
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/api
