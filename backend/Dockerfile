@@ -7,14 +7,17 @@ RUN apk add --no-cache git ca-certificates tzdata wget
 # Set working directory
 WORKDIR /app
 
-# Copy go.mod and go.sum first (for better caching)
-COPY go.mod go.sum ./
+# Copy all files
+COPY . .
+
+# Ensure go.sum exists and is up to date
+RUN if [ ! -f go.sum ] || [ ! -s go.sum ]; then \
+      echo "Generating go.sum"; \
+      go mod tidy; \
+    fi
 
 # Download dependencies
 RUN go mod download
-
-# Copy the rest of the source code
-COPY . .
 
 # Build the application
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/api
